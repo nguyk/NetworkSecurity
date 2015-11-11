@@ -1,0 +1,10 @@
+Langage : C++ avec interface graphique Qt
+
+Liste des features :
+
+- Capture de paquets en direct
+- Affichage des paquets capturés en direct
+- Modification des paquets capturés
+- Injection de paquets
+- Filtrage de paquets
+- Affichage des paquets capturés grâce à une input pcap
