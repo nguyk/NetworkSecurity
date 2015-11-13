@@ -1,4 +1,4 @@
-Langage : C++ avec interface graphique Qt
+Langage : C++ avec interface graphique Qt et des sockets UNIX.
 
 Liste des features :
 
