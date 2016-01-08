@@ -1,10 +1,11 @@
-Langage : C++ avec interface graphique Qt et des sockets UNIX.
+Team “Network Security 2 nguy_k” RFA
+
+Langage utilisé : python
 
 Liste des features :
+- Client SSH (utilisation de la lib libssh2)
+- Serveur SSH (utilisation de la lib libssh2)
+- Forward de port SSH (utilisation de pysshlib2)
+- Contrôle de droits avec ACL
 
-- Capture de paquets en direct
-- Affichage des paquets capturés en direct
-- Modification des paquets capturés
-- Injection de paquets
-- Filtrage de paquets
-- Affichage des paquets capturés grâce à une input pcap
+Les résultats seront affichés sur la console, et toute l’interface se fera  ligne de commande pour utiliser ces différentes fonctionnalite.
