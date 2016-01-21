@@ -8,6 +8,8 @@ import select
 import getpass
 import paramiko
 
+from FileParser import *
+
 from optparse import OptionParser
 
 try:
@@ -126,6 +128,11 @@ def main():
     options, server, remote = parse_options()
 
     password = None
+    parsing = FileParser()
+    parsing.openFile()
+    parsing.parse()
+    parsing.closeFile()
+    
     if options.readpass:
         password = getpass.getpass('Enter your SSH password: ')
 
@@ -154,3 +161,4 @@ def main():
 
 if __name__ == '__main__':
 	main()
+
