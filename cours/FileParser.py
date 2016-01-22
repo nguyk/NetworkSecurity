@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 class FileParser:
 #    def __init__(self): # Notre méthode constructeur                                                                                                                                                     
     def openFile(self):
