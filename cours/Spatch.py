@@ -130,7 +130,7 @@ def main():
     password = None
     parsing = FileParser()
     parsing.openFile()
-    parsing.parse()
+    rightsList = parsing.parse() #Liste d'objets "RightEntry" contenant les différents droits des différent utilisateurs aux différents serveurs
     parsing.closeFile()
     
     if options.readpass:
