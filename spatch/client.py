@@ -5,10 +5,12 @@ import sys
 import socket
 import libssh2
 
+from socket import AF_INET, SOCK_STREAM
+
 DEBUG = True
 
 SSH_PORT = 22
-LOCALHOST_ADDR = '127.0.0.42'
+LOCALHOST_ADDR = '127.0.0.1'
 
 def trace_session(session):
 	if DEBUG and session:
@@ -19,8 +21,10 @@ def trace_session(session):
 			libssh2.LIBSSH2_TRACE_ERROR
 		)
 
+def debug_print(args):
+	if DEBUG: print(args)
+
 class SSHClient(object):
-	LIBSSH2_ERROR_EAGAIN = -37
 	def __init__(self, 
 				 username,
 				 password,
@@ -33,15 +37,27 @@ class SSHClient(object):
 		self.hostname = hostname
 		self.port = port
 
+		self.channel = None
 		self.session = libssh2.Session()
 
-		self.channel = None
-
 		try:
-			self.sock = socket.socket()
+			self.sock = socket.socket(AF_INET, SOCK_STREAM)
 		except Exception, e:
 			print "Error: Can't connect socket to (%s:%d): %s" % (
 				hostname, port, e)
+			sys.exit(1)
+
+		self.connect()
+		self.startup()
+		self.authenticate()
+		self.open_session()
+
+	def authenticate(self):
+		try:
+			self.session.userauth_password(self.username, self.password)
+		except SessionException, e:
+			print "Error: Failed to authenticate user ({0})\
+				with this password.".format(self.username)
 			sys.exit(1)
 
 	def connect(self):
@@ -58,7 +74,7 @@ class SSHClient(object):
 			self.session.startup(self.sock)
 		except SessionException, e:
 			print "Error: Can't startup session: %s" % e
-        	sys.exit(1)
+			sys.exit(1)
 
 	def open_session(self):
 		try:
@@ -68,11 +84,20 @@ class SSHClient(object):
 			raise Exception, self.session.last_error()
 
 	def execute(self, command='uname -a'):
-		buffer = 4096
+		_buffer = 4096
+		read_channel = self.channel.execute(command)
+		debug_print(read_channel)
+		while True:
+			data = self.channel.read(_buffer)
+			if data == '' or data == None: break
+			debug_print(type(data))
+			print data.strip()
+		self.channel.close()
 
+	def __del__(self):
+		self.session.close()
+		debug_print(self.session.last_error())
 
 if __name__ == '__main__':
 	client = SSHClient('xod', 'xgxzpqkux953369=a')
-	client.connect()
-	client.startup()
-	client.open_session()
+	client.execute('ls -la')
