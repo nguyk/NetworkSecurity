@@ -178,5 +178,5 @@ class SSHClient(object):
 		self.shutdown_session()
 
 if __name__ == '__main__':
-	client = SSHClient('xod', 'xgxzpqkux953369=a')
+	client = SSHClient('username', 'password')
 	# client.execute('ls -la')
