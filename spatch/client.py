@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import atexit
 import socket
 import libssh2
 import subprocess
@@ -40,6 +41,10 @@ def trace_session(session):
 
 def debug_print(args):
 	if DEBUG: print(args)
+
+def normal_mode(fd, old_settings):
+	print(old_settings)
+	termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
 
 class SSHClient(object):
 	def __init__(self, 
@@ -120,7 +125,11 @@ class SSHClient(object):
 				else:
 					sys.stdout.flush()
 
-				for sock, x11_chan in x11_channels:
+				if self.fd in r:
+					data = sys.stdin.read(1).replace('\n', '\r\n')
+					self.channel.write(data)
+
+				for sock, x11_chan in list(x11_channels):
 					status, data = x11_chan.read_ex(sbuffer)
 					if status > 0:
 						sock.sendall(data)
@@ -147,6 +156,11 @@ class SSHClient(object):
 			print "Error: Channel exception: %s" % e
 		finally:
 			self.channel.close()
+		atexit.register(normal_mode, self.fd, self.old_settings)
+
+	def shutdown_session(self):
+		self.session.close()
+		del self.session
 
 	def execute(self, command='uname -a'):
 		_buffer = 4096
@@ -160,8 +174,8 @@ class SSHClient(object):
 		self.channel.close()
 
 	def __del__(self):
-		self.session.close()
-		debug_print(self.session.last_error())
+		self.sock.close()
+		self.shutdown_session()
 
 if __name__ == '__main__':
 	client = SSHClient('xod', 'xgxzpqkux953369=a')
