@@ -68,8 +68,7 @@ class SSHClient(object):
 		try:
 			self.sock = socket.socket(AF_INET, SOCK_STREAM)
 		except Exception, e:
-			print "Error: Can't connect socket to (%s:%d): %s" % (
-				hostname, port, e)
+			print "Error: Can't create socket."
 			sys.exit(1)
 
 		self.connect()
@@ -89,8 +88,9 @@ class SSHClient(object):
 		try:
 			self.sock.connect((self.hostname, self.port))
 		except Exception, e:
-			print str(e)
-			raise Exception, self.session.last_error()
+			print "Error: Can't connect socket to (%s:%d): %s" % (
+				hostname, port, e)
+			sys.exit(1)
 
 	def startup(self):
 		try:
