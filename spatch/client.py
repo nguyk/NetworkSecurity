@@ -1,16 +1,33 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys
 import socket
 import libssh2
+import subprocess
+import select, sys
+import tty, termios
 
-from socket import AF_INET, SOCK_STREAM
+from socket import AF_INET, SOCK_STREAM, AF_UNIX, SHUT_RDWR
 
-DEBUG = True
+DEBUG = False
 
 SSH_PORT = 22
 LOCALHOST_ADDR = '127.0.0.1'
+
+x11_channels = []
+
+def raw_mode(fd):
+	tty.setraw(fd)
+
+def x11_callback(session, channel, shost, sport, abstract):
+	display = os.environ["DISPLAY"]
+	display_port = display[display.index(":")+1]
+	_path_unix_x = "/tmp/.X11-unix/X%s" % display_port
+	if display[:5] == "unix:" or display[0] == ':':
+		sock = socket.socket(AF_UNIX, SOCK_STREAM)
+		sock.connect(_path_unix_x)
+	channel.setblocking(0)
+	x11_channels.append((sock, channel))
 
 def trace_session(session):
 	if DEBUG and session:
@@ -39,6 +56,9 @@ class SSHClient(object):
 
 		self.channel = None
 		self.session = libssh2.Session()
+
+		self.fd = sys.stdin.fileno()
+		self.old_settings = termios.tcgetattr(self.fd)
 
 		try:
 			self.sock = socket.socket(AF_INET, SOCK_STREAM)
@@ -72,16 +92,61 @@ class SSHClient(object):
 			self.session.set_banner()
 			trace_session(self.session)
 			self.session.startup(self.sock)
+			self.session.callback_set(libssh2.LIBSSH2_CALLBACK_X11, x11_callback)
 		except SessionException, e:
 			print "Error: Can't startup session: %s" % e
 			sys.exit(1)
 
 	def open_session(self):
+		sbuffer = 8192
 		try:
 			self.channel = self.session.open_session()
-		except Exception, e:
-			print str(e)
-			raise Exception, self.session.last_error()
+			self.channel.pty('xterm')
+			p = subprocess.Popen(['xauth', 'list'], shell=False, stdout=subprocess.PIPE)
+			xauth_data = p.communicate()[0]
+			auth_protocol, auth_cookie = xauth_data.split()[1:3]
+			self.channel.x11_req(0, auth_protocol, auth_cookie, 0)
+			self.channel.shell()
+			self.channel.setblocking(0)
+			raw_mode(self.fd)
+
+			while True:
+				socks = [self.fd] + [sock for sock, _ in x11_channels]
+				r, w, x = select.select(socks, [], [], 0.01)
+				status, data = self.channel.read_ex(sbuffer)
+				
+				if status > 0:
+					sys.stdout.write(data)
+				else:
+					sys.stdout.flush()
+
+				for sock, x11_chan in x11_channels:
+					status, data = x11_chan.read_ex(sbuffer)
+					if status > 0:
+						sock.sendall(data)
+
+					if sock in r:
+						data = sock.recv(sbuffer)
+						if data is None:
+							sock.shutdown(SHUT_RDWR)
+							sock.close()
+							x11_channels.remove((x11_chan, sock))
+						else:
+							x11_chan.write(data)
+
+					if x11_chan.eof():
+						sock.shutdown(SHUT_RDWR)
+						sock.close()
+						x11_channels.remove((x11_chan, sock))
+						continue
+
+				if self.channel.eof():
+					break
+
+		except libssh2.ChannelException, e:
+			print "Error: Channel exception: %s" % e
+		finally:
+			self.channel.close()
 
 	def execute(self, command='uname -a'):
 		_buffer = 4096
@@ -100,4 +165,4 @@ class SSHClient(object):
 
 if __name__ == '__main__':
 	client = SSHClient('xod', 'xgxzpqkux953369=a')
-	client.execute('ls -la')
+	# client.execute('ls -la')
