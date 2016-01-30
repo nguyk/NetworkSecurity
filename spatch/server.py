@@ -53,7 +53,7 @@ class SSHServer(object):
 					print "Client %s, disconnected !" % client
 					client.close()
 					break
-				client.send(recv_data)
+				print(recv_data)
 
 	def __del__(self):
 		self.sock.close()
