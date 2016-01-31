@@ -3,6 +3,7 @@
 
 import sys
 import socket
+import libssh2
 
 from socket import AF_INET, SOCK_STREAM, SOL_SOCKET, SO_REUSEADDR
 
@@ -14,6 +15,9 @@ class SSHServer(object):
 		self.port = port
 		self.hostname = LOCALHOST_ADDR
 
+		self.channel = None
+		self.session = libssh2.Session()
+
 		try:
 			self.sock = socket.socket(AF_INET, SOCK_STREAM)
 		except socket.error as error:
@@ -24,6 +28,17 @@ class SSHServer(object):
 		self._prepare_sock()
 		self.listen()
 		self.waiting_connection()
+
+	def startup_session(self, sock):
+		try:
+			self.session.set_banner()
+			sock.setblocking(0)
+			self.session.startup(sock)
+			# self.session.userauth_password(self.username, self.password)
+			# self.session.callback_set(libssh2.LIBSSH2_CALLBACK_X11, x11_callback)
+		except libssh2.SessionException, e:
+			print "Error: Can't startup session: %s" % e
+			sys.exit(1)
 
 	def _prepare_sock(self):
 		try:
@@ -46,14 +61,19 @@ class SSHServer(object):
 		print "Listening for connection on port %s" % str(self.port)
 		while 42:
 			client, addr = self.sock.accept()
-			print "Client %s, connected from %s" % (client, str(addr))
-			while 42:
-				recv_data = client.recv(sbuffer)
-				if not recv_data or recv_data == 'exit':
-					print "Client %s, disconnected !" % client
-					client.close()
-					break
-				print(recv_data)
+			recv_data = client.recv(sbuffer)
+			client.sendall(recv_data)
+			client.setblocking(0)
+			self.startup_session(client)
+			c = self.session.open_session()
+			# print "Client %s, connected from %s" % (client, str(addr))
+			# while 42:
+			# 	recv_data = client.recv(sbuffer)
+			# 	if not recv_data or recv_data == 'exit':
+			# 		print "Client %s, disconnected !" % client
+			# 		client.close()
+			# 		break
+			# 	print(recv_data)
 
 	def __del__(self):
 		self.sock.close()

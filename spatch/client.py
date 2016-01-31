@@ -98,7 +98,7 @@ class SSHClient(object):
 			trace_session(self.session)
 			self.session.startup(self.sock)
 			self.session.callback_set(libssh2.LIBSSH2_CALLBACK_X11, x11_callback)
-		except SessionException, e:
+		except libssh2.SessionException, e:
 			print "Error: Can't startup session: %s" % e
 			sys.exit(1)
 
