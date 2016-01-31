@@ -22,7 +22,7 @@ class SSHServer(object):
 		try:
 			self.sock = socket.socket(AF_INET, SOCK_STREAM)
 		except socket.error as error:
-			print "Error: Can't create socket.\n\t--> with message: %s" % (
+			print "[-] Error: Can't create socket.\n\t--> with message: %s" % (
 					error)
 			sys.exit(1)
 
@@ -31,21 +31,21 @@ class SSHServer(object):
 		self.waiting_connection()
 
 	def start_client(self, sock):
-		SSHClient('xod', 'xgxzpqkux953369', sock=sock)
+		SSHClient('user', 'passwd', sock=sock)
 
 	def startup(self, client_sock):
 		try:
 			self.session.set_banner()
 			self.session.startup(client_sock)
 		except libssh2.SessionException, e:
-			print "Error: Can't startup session: %s" % e
+			print "[-] Error: Can't startup session: %s" % e
 			sys.exit(1)		
 
 	def _prepare_sock(self):
 		try:
 			self.sock.bind((self.hostname, self.port))
 		except socket.error as error:
-			print "Error: Failed to bind on %s:%s\s\t--> with message: %s" % (
+			print "[-] Error: Failed to bind on %s:%s\s\t--> with message: %s" % (
 					self.hostname, str(self.port), error)
 			sys.exit(1)
 
@@ -53,12 +53,12 @@ class SSHServer(object):
 		try:
 			self.sock.listen(42)
 		except socket.error as error:
-			print "Error: Failed to listening on socket.\n\t--> with message: %s" % (
+			print "[-] Error: Failed to listening on socket.\n\t--> with message: %s" % (
 					error)
 
 	def waiting_connection(self):
 		sbuffer = 8192
-		print "Listening for connection on port %s" % str(self.port)
+		print "[+] Listening for connection on port %s" % str(self.port)
 		while 42:
 			client, addr = self.sock.accept()
 			# self.start_client(client)

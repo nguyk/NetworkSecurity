@@ -83,9 +83,8 @@ class SSHClient(object):
 	def authenticate(self):
 		try:
 			self.session.userauth_password(self.username, self.password)
-		except libssh2.SessionException, e:
-			print "Error: Failed to authenticate user ({0})\
-				with this password.".format(self.username)
+		except:
+			print "Error: Failed to authenticate user ({0}) with this password.".format(self.username)
 			sys.exit(1)
 
 	def connect(self):
@@ -102,8 +101,8 @@ class SSHClient(object):
 			trace_session(self.session)
 			self.session.startup(self.sock)
 			self.session.callback_set(libssh2.LIBSSH2_CALLBACK_X11, x11_callback)
-		except libssh2.SessionException, e:
-			print "Error: Can't startup session: %s" % e
+		except e:
+			print "Error: Can't startup ssh session: %s" % e
 			sys.exit(1)
 
 	def open_session(self):
@@ -156,8 +155,8 @@ class SSHClient(object):
 				if self.channel.eof():
 					break
 
-		except libssh2.ChannelException, e:
-			print "Error: Channel exception: %s" % e
+		except e:
+			print "Error: SSH channel exception: %s" % e
 		finally:
 			self.channel.close()
 		atexit.register(normal_mode, self.fd, self.old_settings)
