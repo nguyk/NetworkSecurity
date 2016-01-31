@@ -51,7 +51,8 @@ class SSHClient(object):
 				 username,
 				 password,
 				 hostname=LOCALHOST_ADDR,
-				 port=SSH_PORT
+				 port=SSH_PORT,
+				 sock=None
 				):
 
 		self.username = username
@@ -66,12 +67,15 @@ class SSHClient(object):
 		self.old_settings = termios.tcgetattr(self.fd)
 
 		try:
-			self.sock = socket.socket(AF_INET, SOCK_STREAM)
-		except Exception, e:
+			if sock:
+				self.sock = sock
+			else:
+				self.sock = socket.socket(AF_INET, SOCK_STREAM)
+				self.connect()
+ 		except Exception, e:
 			print "Error: Can't create socket."
 			sys.exit(1)
 
-		self.connect()
 		self.startup()
 		self.authenticate()
 		self.open_session()
@@ -79,7 +83,7 @@ class SSHClient(object):
 	def authenticate(self):
 		try:
 			self.session.userauth_password(self.username, self.password)
-		except SessionException, e:
+		except libssh2.SessionException, e:
 			print "Error: Failed to authenticate user ({0})\
 				with this password.".format(self.username)
 			sys.exit(1)
