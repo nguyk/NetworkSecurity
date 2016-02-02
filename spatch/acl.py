@@ -1,49 +1,51 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import csv
 import sys
+import json
 
 class Acl(object):
 	def __init__(self, filepath='spatch.right'):
-		try:
-			with open(filepath, 'r') as csv_file:
-				reader = csv.reader(csv_file, delimiter='|')
-				self.acl = self.parse(reader)
-		except:
-			sys.exit(1)
+		self.json_acl = json.load(open(filepath, 'r'))
+		self.users = [user for user in self.json_acl["users"]]
+		self.servers = [server for server in self.json_acl["servers"]]
 
-	def parse(self, reader):
-		acl_dict = {}
-		for row in reader:
-			if row[0] not in acl_dict.keys():
-				acl_dict[row[0]] = {'allowed_servers': [], 'servers_rights': []}
-			acl_dict[row[0]]['passwd'] = row[1]
-			acl_dict[row[0]]['allowed_servers'].append(row[2])
-			acl_dict[row[0]]['servers_rights'].append((row[3], row[4], row[5]))
-		return acl_dict
 
 	def get(self, **kwargs):
 		if 'username' in kwargs.keys():
-			if kwargs['username'] in self.acl.keys():
-				return self.acl[kwargs['username']]
-		return self.acl
+			for user in self.users:
+				if user["name"] == kwargs["username"]:
+					return user
+		if 'servername' in kwargs.keys():
+			for server in self.servers:
+				if server["name"] == kwargs["servername"]:
+					return server
+		return self.json_acl
 
 	def check_user(self, username, passwd):
-		if username in self.acl.keys():
-			if passwd == self.acl[username]['passwd']:
+		for user in self.users:
+			if username == user["name"] and passwd == user["password"]:
 				return True
 		return False
 
 	def get_user_allowed_servers(self, username):
-		if username in self.acl.keys():
-			return self.acl[username]['allowed_servers']
+		for user in self.users:
+			if username == user["name"]:
+				return user["allowed_servers"]
+		return None
 
-	def get_user_right_on_server(self, username, server_addr):
-		if username in self.acl.keys():
-			if server_addr in self.acl[username]['allowed_servers']:
-				return self.acl[username]['servers_rights'][self.acl[username]['allowed_servers'].index(server_addr)]
+	def get_user_right_on_server(self, username, servername):
+		for user in self.users:
+			if username == user["name"]:
+				for server in user["allowed_servers"]:
+					if servername == server["name"]:
+						return server["rights"]
 		return None
 
 if __name__ == '__main__':
 	acl = Acl()
+	# print(acl.get(username="xod"))
+	# print(acl.get(servername="localhost"))
+	# print(acl.check_user('xod', 'testtest'))
+	# print(acl.get_user_allowed_servers('xod'))
+	# print(acl.get_user_right_on_server('xod', 'localhost'))

@@ -46,14 +46,17 @@ def normal_mode(fd, old_settings):
 	print(old_settings)
 	termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
 
-class SSHClient(object):
+class SSHSpatchClient(object):
 	def __init__(self, 
 				 username,
 				 password,
 				 hostname=LOCALHOST_ADDR,
 				 port=SSH_PORT,
-				 sock=None
+				 sock=None,
+				 x11=False
 				):
+
+		self.x11 = x11
 
 		self.username = username
 		self.password = password
@@ -78,7 +81,9 @@ class SSHClient(object):
 
 		self.startup()
 		self.authenticate()
-		self.open_session()
+
+		if self.x11:
+			self.open_x11_session()
 
 	def authenticate(self):
 		try:
@@ -92,7 +97,7 @@ class SSHClient(object):
 			self.sock.connect((self.hostname, self.port))
 		except Exception, e:
 			print "Error: Can't connect socket to (%s:%d): %s" % (
-				hostname, port, e)
+				self.hostname, self.port, e)
 			sys.exit(1)
 
 	def startup(self):
@@ -100,12 +105,19 @@ class SSHClient(object):
 			self.session.set_banner()
 			trace_session(self.session)
 			self.session.startup(self.sock)
-			self.session.callback_set(libssh2.LIBSSH2_CALLBACK_X11, x11_callback)
+			if self.x11:
+				self.session.callback_set(libssh2.LIBSSH2_CALLBACK_X11, x11_callback)
 		except e:
 			print "Error: Can't startup ssh session: %s" % e
 			sys.exit(1)
 
 	def open_session(self):
+		try:
+			self.channel = self.session.open_session()
+		except Exception, e:
+			print "Error : Can't open the ssh session on remote server. %s" % (e)
+
+	def open_x11_session(self):
 		sbuffer = 8192
 		try:
 			self.channel = self.session.open_session()
@@ -162,24 +174,26 @@ class SSHClient(object):
 		atexit.register(normal_mode, self.fd, self.old_settings)
 
 	def shutdown_session(self):
-		self.session.close()
+		if self.session:
+			self.session.close()
 		del self.session
 
 	def execute(self, command='uname -a'):
-		_buffer = 4096
+		_buffer = 8192000
+		self.open_session()
 		read_channel = self.channel.execute(command)
 		debug_print(read_channel)
+
 		while True:
 			data = self.channel.read(_buffer)
-			if data == '' or data == None: break
+			if data == '' or data == None: return "Commande inconnue"
 			debug_print(type(data))
-			print data.strip()
-		self.channel.close()
+			return data.strip()
 
 	def __del__(self):
-		self.sock.close()
+		if self.sock:
+			self.sock.close()
 		self.shutdown_session()
 
 if __name__ == '__main__':
-	client = SSHClient('username', 'password')
-	# client.execute('ls -la')
+	client = SSHSpatchClient('xod', 'xgxzpqkux953369=a', x11=False)

@@ -4,7 +4,7 @@
 import getpass
 
 from acl import Acl
-from client import SSHClient
+from spatch_client import SSHSpatchClient
 
 acl = Acl()
 
@@ -27,6 +27,6 @@ if __name__ == '__main__':
 		if int(choice) >= 0 and int(choice) <= len(allowed_servers)-1:
 			print "[+] Your choice is {}".format(choice)
 			print "[+] Connection to {}...".format(allowed_servers[int(choice)])
-			SSHClient(username, passwd)
+			SSHSpatchClient(username, passwd)
 		else:
 			print "[-] This choice ({}) isn't allowed sorry !".format(choice)

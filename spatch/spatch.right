@@ -1,5 +1,50 @@
-toto|passwd|42.42.42.42|0|1|0
-titi|passwd|43.43.43.43|0|0|0
-tata|passwd|44.44.44.44|1|1|1
-tutu|passwd|45.45.45.45|1|0|0
-user|pass|127.0.0.1|1|1|1
+{
+	"users":
+	[
+		{
+			"name":"toto",
+			"password": "totototo",
+			"allowed_servers":
+			[
+				{
+					"name": "NetworkSecurityMachine",
+					"address": "127.0.0.1",
+					"port": "3022",
+					"rights": "555"
+				}
+			]
+		},
+		{
+			"name":"xod",
+			"password": "testtest",
+			"allowed_servers":
+			[
+				{
+					"name": "localhost",
+					"address": "127.0.0.1",
+					"port": "22",
+					"rights": "777"
+				},
+				{
+					"name": "NetworkSecurityMachine",
+					"address": "127.0.0.1",
+					"port": "3022",
+					"rights": "555"
+				}
+			]
+		}		
+	],
+	"servers":
+	[
+		{
+			"name": "localhost",
+			"username": "root",
+			"password": "root"
+		},
+		{
+			"name": "NetworkSecurityMachine",
+			"username": "root",
+			"password": "root"
+		}
+	]
+}
