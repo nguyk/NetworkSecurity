@@ -116,13 +116,13 @@ class SSHServer(object):
 				print("Client never asked for a shell")
 				sys.exit(1)
 
-			chan.send("Welcome to Spatch Proxy !")
-			chan.send("Select your server:")
+			chan.send("\rWelcome to Spatch Proxy !\n")
+			chan.send("\rSelect your server:\n")
 			f = chan.makefile("rU")
 
 			while True:
 				server_name = f.readline()
-				chan.send("you try to choose: " + server_name)
+				chan.send("\ryou try to choose: " + server_name + "\n")
 			chan.close()
 
 		except Exception as e:
