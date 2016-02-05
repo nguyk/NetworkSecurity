@@ -9,6 +9,7 @@ import threading
 import traceback
 import paramiko
 
+from acl import Acl
 from client import SSHClient
 from socket import AF_INET, SOCK_STREAM, SOL_SOCKET, SO_REUSEADDR
 from paramiko.py3compat import b, u, decodebytes
@@ -17,7 +18,8 @@ host_key = paramiko.RSAKey(filename='rsa.key')
 
 SSH_PORT = 22
 LOCALHOST_ADDR = '127.0.0.1'
-
+allowed_servers = 'vide'
+acl = Acl()
 
 class Server (paramiko.ServerInterface):
     def __init__(self):
@@ -29,8 +31,8 @@ class Server (paramiko.ServerInterface):
         return paramiko.OPEN_FAILED_ADMINISTRATIVELY_PROHIBITED
 
     def check_auth_password(self, username, password):
-        if (username == 'user') and (password == 'password'):
-            return paramiko.AUTH_SUCCESSFUL
+    	if acl.check_user(username, password):
+    		return paramiko.AUTH_SUCCESSFUL
         return paramiko.AUTH_FAILED
 
     def check_channel_shell_request(self, channel):
@@ -93,10 +95,10 @@ class SSHServer(object):
 			except:
 				print ("Failed in the loading process of moduli")
 				sys.exit(1)
-			server = Server()
+			server_machine = Server()
 			self.ssh.add_server_key(host_key)
 			try:
-				self.ssh.start_server(server=server)
+				self.ssh.start_server(server=server_machine)
 			except paramiko.SSHException:
 				print ("SSH start failed")
 				sys.exit(1)
@@ -111,18 +113,38 @@ class SSHServer(object):
 				print("No channel")
 				sys.exit(1)
 
-			server.event.wait(10)
-			if not server.event.is_set():
+			server_machine.event.wait(10)
+			if not server_machine.event.is_set():
 				print("Client never asked for a shell")
 				sys.exit(1)
 
 			chan.send("\rWelcome to Spatch Proxy !\n")
-			chan.send("\rSelect your server:\n")
+			chan.send("\rSelect your server:\n\r")
+			allowed_servers = acl.get_user_allowed_servers()
+			response = ''
+			for i in range(len(allowed_servers)):
+				response += "\r\n\t%s) %s" % (i, allowed_servers[i]["name"])
+			response += "\n\r"
+			chan.send(response)
 			f = chan.makefile("rU")
 
+			server_choice = f.readline()
+			int_server_choice = -42
 			while True:
-				server_name = f.readline()
-				chan.send("\ryou try to choose: " + server_name + "\n")
+				try:
+					int_server_choice = int(server_choice)
+				except:
+					chan.send("not a number: " + server_choice + "\r")
+				if int_server_choice >= 0 and int_server_choice <= i:
+					chan.send("You choosed server: " + allowed_servers[int_server_choice]["name"] + "\n\r")
+					while True:
+						cmd = f.readline()
+						# ici je récupére la commande
+						chan.send("You typed command: " + cmd)
+				else:
+					if int_server_choice != -42:
+						chan.send("invalid server choose: " + server_choice + "\r")
+					server_choice = f.readline()
 			chan.close()
 
 		except Exception as e:

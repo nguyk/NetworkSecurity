@@ -9,6 +9,7 @@ class Acl(object):
 		self.json_acl = json.load(open(filepath, 'r'))
 		self.users = [user for user in self.json_acl["users"]]
 		self.servers = [server for server in self.json_acl["servers"]]
+		self.connecteduser = ''
 
 
 	def get(self, **kwargs):
@@ -25,12 +26,13 @@ class Acl(object):
 	def check_user(self, username, passwd):
 		for user in self.users:
 			if username == user["name"] and passwd == user["password"]:
+				self.connecteduser = username
 				return True
 		return False
 
-	def get_user_allowed_servers(self, username):
+	def get_user_allowed_servers(self):
 		for user in self.users:
-			if username == user["name"]:
+			if self.connecteduser == user["name"]:
 				return user["allowed_servers"]
 		return None
 
