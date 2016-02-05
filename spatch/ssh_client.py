@@ -9,7 +9,7 @@ import threading
 
 from socket import AF_INET, SOCK_STREAM
 
-SSH_PORT = 4242
+SSH_PORT = 4242 
 LOCALHOST_ADDR = '127.0.0.1'
 
 NO_ACCES_STR = "Your login informations granted to you no acces !"
